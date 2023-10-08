@@ -99,7 +99,6 @@ def earthquake (lat, lon, date):
                 "latitude" : directory["latitude"],
                 "longitude" : directory["longitude"],
                 "magnitude" : directory["magnitude"],
-                "azimuthalGap" : directory["azimuthal-gap"],
                 "depth" : directory["depth"],
                 "evaluationStatus" : directory["evaluation-status"],
                 "time" : directory["eventtime"]
@@ -112,8 +111,19 @@ def earthquake (lat, lon, date):
     print("ERROR RETRIEVING EARTHQUAKE DATA")
     return []
 
+MAP_KEY = "16133c14a74d297e96d1e954fb77e6e9"
+def fireSpots (lat, lon):
+    df = 'https://firms.modaps.eosdis.nasa.gov/api/country/csv/' + MAP_KEY + '/MODIS_NRT/CAN/4'
+    df_narrow = df[(df['longitude'] >= lon - 10) & (df['latitude'] >= lat - 10) & (df['longitude'] <= lon + 10) & (df['latitude'] <= lat + 10)].copy()
 
+    gdf = geopandas.GeoDataFrame(
+        df_narrow, geometry=geopandas.points_from_xy(df_narrow.longitude, df_narrow.latitude), crs="EPSG:4326"
+    )
 
+    out = []
+    for pin in gdf:
+        out += (pin["latitude"], pin["longitude"])
+    return out
 
 if __name__ == "main":
     print(earthquake(43.6532, -79.3832, datetime.now()))

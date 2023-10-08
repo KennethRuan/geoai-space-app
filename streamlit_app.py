@@ -16,6 +16,8 @@ import json
 import geopandas as gpd
 import plotly.graph_objs as go
 
+import math
+
 import shapefile
 
 @st.cache_data
@@ -31,10 +33,6 @@ def overlayFromTIF(image_file):
 
     return img, [[ymax, xmax], [ymin, xmin]]
 
-@st.cache_data
-def getEvents():
-    return events()
-    
 def app():
     # App title
     st.title("AI 1000")
@@ -62,10 +60,33 @@ def app():
     if 'zoom' not in st.session_state:
         st.session_state['zoom'] = 10
 
+    if 'eq' not in st.session_state:
+        st.session_state['eq'] = []
+
     # Function to update the value in session state
     def clicked(button, center):
         st.session_state['clicked'][button] = True
         st.session_state['center'] = center
+
+        print("RUNNING")
+        lat, lon = st.session_state.center
+        eqs = earthquake(lat, lon, datetime.now())
+        print("EQS", eqs)
+        if eqs != None and len(eqs) > 0:
+            for eq in eqs:
+                print("Adding", eq[2].location, "earthquake with radius", int(math.floor(float(eq[1]["magnitude"]))))
+                
+                st.session_state['eq'].append(
+                    folium.Circle(
+                        location=eq[2].location,
+                        popup="Earthquake",
+                        color="red",
+                        fill_color="red",
+                        radius=int(math.floor(float(eq[1]["magnitude"])))*500,
+                    )
+                )
+        
+        print("FINISHED ADDING EQS, RETURNED", len(eqs if eqs else []))
 
 
     tif_display = False
@@ -101,37 +122,26 @@ def app():
     earthquake_layer = folium.FeatureGroup(
         name="Earthquakes"
     )
+
+    for eq in st.session_state['eq']:
+        eq.add_to(earthquake_layer)
+
     eventss = folium.FeatureGroup(
         name="Events"
     )
 
     # Run all API calls that add geometry to the map
-    if st.session_state['clicked'][1] and st.session_state['center']:
-        print("RUNNING")
-        lat, lon = st.session_state.center
-        eqs = earthquake(lat, lon, datetime.now())
-        print("EQS", eqs)
-        if eqs != None and len(eqs) > 0:
-            for eq in eqs:
-                print("Adding", eq[2].location, "earthquake with radius")
-                folium.CircleMarker(
-                    location=eq[2].location,
-                    popup="Earthquake",
-                    color="red",
-                    fill_color="red",
-                    radius=eq[1]["magnitude"] * 5,
-                ).add_to(earthquake_layer)
-        print("FINISHED ADDING EQS, RETURNED", len(eqs if eqs else []))
-        # evs = getEvents()
-        # for ev in evs:
-        #     folium.CircleMarker(
-        #         location=ev.location,
-        #         popup="Event",
-        #         color="blue",
-        #         fill_color="blue",
-        #         radius=5,
-        #     ).add_to(eventss)
-        # print("ADDED EVENTS", len(evs))
+
+    # evs = events()
+    # for ev in evs:
+    #     folium.CircleMarker(
+    #         location=ev.location,
+    #         popup="Event",
+    #         color="blue",
+    #         fill_color="blue",
+    #         radius=5,
+    #     ).add_to(eventss)
+    # print("ADDED EVENTS", len(evs))
             
                 
 
@@ -145,17 +155,17 @@ def app():
 
     earthquake_layer.add_to(m)
 
-    img_dat, bounds = overlayFromTIF(r"./data/Map.tif")
-    folium.raster_layers.ImageOverlay(
-        name="TIF File",
-        image=img_dat,
-        bounds=bounds,
-        opacity=0.6,
-        interactive=True,
-        cross_origin=False,
-        zindex=1,
-        show=tif_display,
-    ).add_to(m)
+    # img_dat, bounds = overlayFromTIF(r"./data/Map.tif")
+    # folium.raster_layers.ImageOverlay(
+    #     name="TIF File",
+    #     image=img_dat,
+    #     bounds=bounds,
+    #     opacity=0.6,
+    #     interactive=True,
+    #     cross_origin=False,
+    #     zindex=1,
+    #     show=tif_display,
+    # ).add_to(m)
 
     print("HELPPPPP", earthquake_layer.to_dict())
 
