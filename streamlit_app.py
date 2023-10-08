@@ -1,51 +1,222 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
-from apps import home, heatmap, upload, demo  # import your app modules here
+from streamlit_folium import folium_static, st_folium
+import folium
+import numpy as np
 
-st.set_page_config(page_title="Streamlit Geospatial", layout="wide")
+import leafmap.foliumap as leafmap
 
-# A dictionary of apps in the format of {"App title": "App icon"}
-# More icons can be found here: https://icons.getbootstrap.com
+import rasterio
+from rasterio.warp import transform_bounds
+from rasterio.crs import CRS
 
-apps = [
-    {"func": home.app, "title": "Home", "icon": "house"},
-    {"func": heatmap.app, "title": "Heatmap", "icon": "map"},
-    {"func": demo.app, "title": "Demo", "icon": "cloud-upload"},
-]
+from apis import weatherData1, earthquake, events
+from datetime import datetime
 
-titles = [app["title"] for app in apps]
-titles_lower = [title.lower() for title in titles]
-icons = [app["icon"] for app in apps]
+import json
+import geopandas as gpd
+import plotly.graph_objs as go
 
-params = st.experimental_get_query_params()
+import shapefile
 
-if "page" in params:
-    default_index = int(titles_lower.index(params["page"][0].lower()))
-else:
-    default_index = 0
+@st.cache_data
+def overlayFromTIF(image_file):
+    dat = rasterio.open(image_file)
+    img = dat.read(1)
+    print(img.shape)
 
-with st.sidebar:
-    selected = option_menu(
-        "Main Menu",
-        options=titles,
-        icons=icons,
-        menu_icon="cast",
-        default_index=default_index,
+    img[img[:,:]<0]=0
+    bounds = dat.bounds
+
+    xmin, ymin, xmax, ymax = transform_bounds(dat.crs.to_epsg(), 4326, *bounds)
+
+    return img, [[ymax, xmax], [ymin, xmin]]
+
+@st.cache_data
+def getEvents():
+    return events()
+    
+def app():
+    # App title
+    st.title("AI 1000")
+
+    selected = st.sidebar.multiselect(
+        'Data to load',
+        ['Fire data', 'Flood data', 'Earthquake data']
+    ) #use values in selected to determine which maps to render
+
+    st.sidebar.write("---")
+
+    focused = st.sidebar.selectbox(
+        'Show detailed data for',
+        selected
     )
 
-    st.sidebar.title("About")
-    st.sidebar.info(
-        """
-        This web [app](https://share.streamlit.io/giswqs/streamlit-template) is maintained by [Qiusheng Wu](https://wetlands.io). You can follow me on social media:
-            [GitHub](https://github.com/giswqs) | [Twitter](https://twitter.com/giswqs) | [YouTube](https://www.youtube.com/c/QiushengWu) | [LinkedIn](https://www.linkedin.com/in/qiushengwu).
-        
-        Source code: <https://github.com/giswqs/streamlit-template>
+    # Initialize the key in session state
+    if 'clicked' not in st.session_state:
+        st.session_state['clicked'] = {1:False}
+    
+    # Capture feedback from the interaction
+    if 'center' not in st.session_state:
+        st.session_state['center'] = (48.363352, -80.271750)
+    
+    if 'zoom' not in st.session_state:
+        st.session_state['zoom'] = 10
 
-        More menu icons: <https://icons.getbootstrap.com>
-    """
+    # Function to update the value in session state
+    def clicked(button, center):
+        st.session_state['clicked'][button] = True
+        st.session_state['center'] = center
+
+
+    tif_display = False
+    # if "TIF" in display_layers:
+    #     tif_display = True
+
+    # st.write("you selected", display_layers)
+
+    coordinates = st.text_input(
+        "Enter comma-separated latitude and longitude (e.g., 48.363352, -80.271750):"
     )
 
-for app in apps:
-    if app["title"] == selected:
-        app["func"]()
-        break
+    timestep = st.slider(
+        "Time Step",
+        0, 9, 0
+    )
+
+    base_lat, base_lon = st.session_state.center
+    # Split the input into latitude and longitude
+    try:
+        base_lat, base_lon = map(float, coordinates.split(","))
+    except ValueError:
+        pass
+
+    m = leafmap.Map(
+        google_map="TERRAIN",
+        location=[base_lat, base_lon],
+        zoom_start=st.session_state['zoom'],
+        max_zoom=20,
+        min_zoom=4,
+    )
+
+    earthquake_layer = folium.FeatureGroup(
+        name="Earthquakes"
+    )
+    eventss = folium.FeatureGroup(
+        name="Events"
+    )
+
+    # Run all API calls that add geometry to the map
+    if st.session_state['clicked'][1] and st.session_state['center']:
+        print("RUNNING")
+        lat, lon = st.session_state.center
+        eqs = earthquake(lat, lon, datetime.now())
+        print("EQS", eqs)
+        if eqs != None and len(eqs) > 0:
+            for eq in eqs:
+                print("Adding", eq[2].location, "earthquake with radius")
+                folium.CircleMarker(
+                    location=eq[2].location,
+                    popup="Earthquake",
+                    color="red",
+                    fill_color="red",
+                    radius=eq[1]["magnitude"] * 5,
+                ).add_to(earthquake_layer)
+        print("FINISHED ADDING EQS, RETURNED", len(eqs if eqs else []))
+        # evs = getEvents()
+        # for ev in evs:
+        #     folium.CircleMarker(
+        #         location=ev.location,
+        #         popup="Event",
+        #         color="blue",
+        #         fill_color="blue",
+        #         radius=5,
+        #     ).add_to(eventss)
+        # print("ADDED EVENTS", len(evs))
+            
+                
+
+    folium.CircleMarker(
+        location=[-0.2694, 125.1609],
+        popup="Earthquake",
+        color="red",
+        fill_color="red",
+        radius=5,
+    ).add_to(earthquake_layer)
+
+    earthquake_layer.add_to(m)
+
+    img_dat, bounds = overlayFromTIF(r"./data/Map.tif")
+    folium.raster_layers.ImageOverlay(
+        name="TIF File",
+        image=img_dat,
+        bounds=bounds,
+        opacity=0.6,
+        interactive=True,
+        cross_origin=False,
+        zindex=1,
+        show=tif_display,
+    ).add_to(m)
+
+    print("HELPPPPP", earthquake_layer.to_dict())
+
+        # print("Image file", image_file)
+
+
+    folium.LayerControl().add_to(m)
+
+
+    output = m.to_streamlit(
+        bidirectional=True, 
+        feature_group_to_add=earthquake_layer
+    )
+
+    lat, lon = m.st_map_center(output)
+
+    print(m.st_map_center(output))
+
+
+    st.button("Process Geometries", on_click=clicked, args=[True, (lat, lon)])
+
+    # shape file 
+    # shp_filename = r"C:\Users\kenne\OneDrive\Documents\Hackathon Projects\geoai-space-app\data\nbac_2022_r12_20230630.shp"
+    
+    # #shp_geojson = shapefile.Reader(shp_filename).__geo_interface__
+
+    # shp_file = gpd.read_file(shp_filename)
+    # shp_file.to_file('myJson.geojson', driver='GeoJSON')
+
+    # #m = folium.Map(location=[40, -120], zoom_start=10)
+    # st.print("this should be a thing")
+    # shp_file.add_to(m)
+    # #st.print(shp_geojson)
+    # #shp_geojson.add_to(m)
+
+    # Pull data from APIs
+
+    # Call and write weather data
+    weather = weatherData1(lat, lon)
+    weather_time_label = weather[0][4][timestep]
+    weather_data = weather[0][1][timestep]
+
+    # Display statistics
+    st.header("Statistics")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("Lat, Lng: {}, {}".format(lat, lon))
+
+    with col2:
+        st.write("**Timestamp:** *" + weather_time_label + "*")
+        for i, (k, v) in enumerate(weather_data["details"].items()):
+            formattedKey = k.replace("_", " ").title()
+            formattedValue = str(v) + " " + str(weather[0][3][i])
+            st.write("{}: {}".format(formattedKey, formattedValue))
+    
+    # Provide feedback based on currently toggled Layers
+       
+if __name__ == "__main__": 
+    app()
+
+
+    
