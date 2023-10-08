@@ -65,9 +65,12 @@ def app():
 
     # Function to update the value in session state
     def clicked(button, center):
+        print("CLICKED")
         st.session_state['clicked'][button] = True
         st.session_state['center'] = center
 
+        st.session_state['eq'] = []
+        
         print("RUNNING")
         lat, lon = st.session_state.center
         eqs = earthquake(lat, lon, datetime.now())
@@ -143,15 +146,13 @@ def app():
     #     ).add_to(eventss)
     # print("ADDED EVENTS", len(evs))
             
-                
-
-    folium.CircleMarker(
-        location=[-0.2694, 125.1609],
-        popup="Earthquake",
-        color="red",
-        fill_color="red",
-        radius=5,
-    ).add_to(earthquake_layer)
+    # folium.CircleMarker(
+    #     location=[-0.2694, 125.1609],
+    #     popup="Earthquake",
+    #     color="red",
+    #     fill_color="red",
+    #     radius=5,
+    # ).add_to(earthquake_layer)
 
     earthquake_layer.add_to(m)
 

@@ -78,7 +78,7 @@ def earthquake (lat, lon, date):
     req += "&latitude=" + str(lat)
     req += "&longitude=" + str(lon)
     req += "&maxradiuskm=" + str(DETECTION_RADIUS)
-    req += "&endtime=" + str(date) + "&starttime=" + str(date - timedelta(days = 30))
+    req += "&endtime=" + str(date) + "&starttime=" + str(date - timedelta(days = 7))
 
     res = requests.get(req)
     
@@ -122,7 +122,7 @@ def fireSpots (lat, lon):
 
     out = []
     for pin in gdf:
-        out += (pin["latitude"], pin["longitude"])
+        out += [folium.Marker(location=[pin["latitude"], pin["longitude"]], icon=folium.Icon(color="red"))]
     return out
 
 if __name__ == "main":
