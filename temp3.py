@@ -10,7 +10,7 @@ import rasterio
 from rasterio.warp import transform_bounds
 from rasterio.crs import CRS
 
-from apis import weatherData1, earthquake_t, events, tsunami
+from helper.apis import weatherData1, earthquake_t, events, tsunami
 from datetime import datetime
 
 import json
