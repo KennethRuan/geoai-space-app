@@ -2,7 +2,7 @@
 
 ### Mapping Data for Societal Benefit
 
-![Visuals](https://github.com/KennethRuan/geoai-space-app/blob/main/data_visualization.png?raw=true)
+![Visuals](https://github.com/KennethRuan/geoai-space-app/blob/master/data_visualization.png?raw=true)
 
 We built a powerful compositing tool specifically designed to generate AI training datasets from meshes of publicly available data, making it the ideal aide for AI researchers and analysts. 
 
