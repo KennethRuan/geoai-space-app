@@ -10,12 +10,7 @@ from rasterio.warp import transform_bounds
 from rasterio.crs import CRS
 
 from helper.apis import weatherData1, earthquake_t, events, tsunami
-from datetime import datetime
-
 import json
-import geopandas as gpd
-import plotly.graph_objs as go
-
 import math
 
 import io
