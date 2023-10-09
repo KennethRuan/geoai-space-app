@@ -9,7 +9,7 @@ import rasterio
 from rasterio.warp import transform_bounds
 from rasterio.crs import CRS
 
-from apis import weatherData1, earthquake_t, events, tsunami
+from .apis import weatherData1, earthquake_t, events, tsunami
 from datetime import datetime
 
 import json
@@ -294,16 +294,16 @@ def app():
 
     # Add image layer with data/temperature.png
 
-    # folium.raster_layers.ImageOverlay(
-    #     name="Trees",
-    #     image=r"./data/can_tree.png",
-    #     bounds=[[46.196764, -141.420226], [73.451827, -50.277364]],
-    #     opacity=0.6,
-    #     interactive=True,
-    #     cross_origin=False,
-    #     zindex=1,
-    #     show=True,
-    # ).add_to(m)
+    folium.raster_layers.ImageOverlay(
+        name="Temperature",
+        image=r"./data/temperature.png",
+        bounds=[[-90, -180], [90, 180]],
+        opacity=0.6,
+        interactive=True,
+        cross_origin=False,
+        zindex=1,
+        show=True,
+    ).add_to(m)
 
 
     # img_dat, bounds = overlayFromTIF(r".\data\Canada_MFv2020.tiff")
@@ -344,9 +344,6 @@ def app():
     # center_lat, center_lon = center['lat'], center['lng']
 
     st.button("Process Data", on_click=clicked, args=[True, center, ubounds, earthquake_layer, ice_layer, storm_layer, tsunami_layer])
-
-    # shape file 
-    # shp_filename = r"C:\Users\kenne\OneDrive\Documents\Hackathon Projects\geoai-space-app\data\nbac_2022_r12_20230630.shp"
     
     # #shp_geojson = shapefile.Reader(shp_filename).__geo_interface__
 

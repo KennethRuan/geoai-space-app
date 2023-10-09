@@ -1,9 +1,15 @@
-# streamlit-template
+# Databuilder
 
-A streamlit app template for geospatial applications based on [streamlit-option-menu](https://github.com/victoryhb/streamlit-option-menu).
+### Mapping Data for Societal Benefit
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/giswqs/streamlit-template/master?urlpath=proxy/8501/)
+![Visuals](https://github.com/KennethRuan/geoai-space-app/blob/main/data_visualization.png?raw=true)
 
-App URL: <https://share.streamlit.io/giswqs/streamlit-template>
+We built a powerful compositing tool specifically designed to generate AI training datasets from meshes of publicly available data, making it the ideal aide for AI researchers and analysts. 
 
-![](https://i.imgur.com/xd64mCi.png)
+We strove to make the design intuitive for just about anyone to use, improving the accessibility of the data for the general population while still being capable of powering modern-day research.
+
+An ambitious future for both civilian science as well as academic research lies ahead for DataBuilder and the OpenAI community.
+
+### The Goal
+
+The goal is that DataBuilder will be an intuitive resource for users to preview datasets and will act as a helpful building block for researchers. We hope the app will inspire others to play around with the vast and interesting world of geospatial data!
