@@ -1,7 +1,4 @@
 import geopandas
-import matplotlib.pyplot as plt
-from cartopy import crs as ccrs
-from geodatasets import get_path
 import requests
 import json
 from datetime import datetime 

@@ -21,7 +21,6 @@ import math
 import io
 from PIL import Image
 
-import zipfile
 import os
 
 @st.cache_data
