@@ -8,6 +8,29 @@ from datetime import datetime
 from datetime import timedelta
 import folium
 
+import hashlib
+
+eventToRadius = {
+    'Sea and Lake Ice': 4,
+    'Wildfires': 10,
+    'Volcanoes': 30,
+}
+
+def string_to_hex_color(input_string):
+    try:
+        # Use hashlib to create a hash value from the input string
+        hash_object = hashlib.sha256(input_string.encode())
+        hex_hash = hash_object.hexdigest()
+
+        # Take the first 6 characters of the hash as the RGB values
+        hex_color = "#" + hex_hash[:6]
+
+        return hex_color
+    except Exception as e:
+        # Handle any exceptions that may occur during the process
+        print(f"Error: {e}")
+        return None
+
 
 def weatherData1(lat, lon):
     # api-endpoint for weather data
@@ -51,7 +74,100 @@ def weatherData1(lat, lon):
             i = i + 1
         return [("MET Weather Forecast", timeseries, lastUp, measurements, timemarker)]
     else:
-        return [("Error Retrieving Forcast Data", [], 0)]
+        # Return fake generated data for 10 time intervals
+        return [("Error Retrieving Forcast Data", [
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                },
+            },
+            {
+                "details": {
+                    "air_pressure_at_sea_level": 1000,
+                    "air_temperature": 10,
+                    "cloud_area_fraction": 50,
+                    "relative_humidity": 50,
+                    "wind_from_direction": 180,
+                    "wind_speed": 10
+                }
+            }, 
+        # Time labels in 1 hour increments ISO format
+        ], 0, ["", "", "", "", "", "", ""], [datetime.now().isoformat(), (datetime.now() + timedelta(hours = 1)).isoformat(), (datetime.now() + timedelta(hours = 2)).isoformat(), (datetime.now() + timedelta(hours = 3)).isoformat(), (datetime.now() + timedelta(hours = 4)).isoformat(), (datetime.now() + timedelta(hours = 5)).isoformat(), (datetime.now() + timedelta(hours = 6)).isoformat(), (datetime.now() + timedelta(hours = 7)).isoformat(), (datetime.now() + timedelta(hours = 8)).isoformat(), (datetime.now() + timedelta(hours = 9)).isoformat()])]
     
 def events():
     URL = "https://eonet.gsfc.nasa.gov/api/v2.1/events"
@@ -66,8 +182,21 @@ def events():
         for x in (data)["events"]:
             title = x["title"]
             geom = x["geometries"]
+            
+            type = x["categories"][0]["title"]
+            radius = 2
+
+            if (type in eventToRadius.keys()):
+                radius = eventToRadius[type]
+            
             for loc in geom:
-                circ = folium.CircleMarker(location=[loc["coordinates"][0], loc["coordinates"][1]], popup=title, fill_color="#FF0000", radius=(20), weight=2, color="#FF0000")
+                circ = {
+                    'location': loc["coordinates"], 
+                    'popup': title, 
+                    'fill_color': string_to_hex_color(title), 
+                    'radius': radius, 
+                    "color": string_to_hex_color(title)
+                }
                 circs.append(circ)
     return circs
 
@@ -108,7 +237,7 @@ def earthquake (lat, lon, date):
             geometry = folium.CircleMarker(location=[details["latitude"], details["longitude"]], popup=title, fill_color="#964B00", radius=(details["magnitude"]*5), weight=2, color="#964B00")
             out += [(title, details, geometry)]
         return out
-    print("ERROR RETRIEVING EARTHQUAKE DATA")
+    print("ERROR RETRIEVING EARTHQUAKE DATA", res)
     return []
 
 MAP_KEY = "16133c14a74d297e96d1e954fb77e6e9"
@@ -124,6 +253,46 @@ def fireSpots (lat, lon):
     for pin in gdf:
         out += [folium.Marker(location=[pin["latitude"], pin["longitude"]], icon=folium.Icon(color="red"))]
     return out
+def tsunami():
+    url = "https://ngdc.noaa.gov/hazel//hazard-service/api/v1/tsunamis/events?minYear=2000&minEqMagnitude=6"
+    r = requests.get(url)
+
+    if (r.status_code == 200):
+        data = r.json()
+
+        # Parse the JSON data
+        #data = json.loads(dataa)
+    out  = []
+    # Extract latitude, longitude, and tsunami magnitude for each item
+    for item in data["items"]:
+        latitude = item["latitude"]
+        longitude = item["longitude"]
+        tsunami_magnitude = item.get("tsMtIi", None)  # Some items may not have tsunami magnitude
+        if tsunami_magnitude is not None:
+            out.append({"Latitude": latitude, "Longitude": longitude, "Magnitude": tsunami_magnitude})
+    return out
+def earthquake_t():
+    url = "https://ngdc.noaa.gov/hazel//hazard-service/api/v1/tsunamis/events?minYear=2000&minEqMagnitude=6"
+    r = requests.get(url)
+    
+    if (r.status_code == 200):
+        data = r.json()
+    
+    out = []
+    # Extract latitude, longitude, and tsunami magnitude for each item
+    for item in data["items"]:
+        latitude = item["latitude"]
+        longitude = item["longitude"]
+        mag = item["eqMagnitude"]
+        out.append({"Latitude": latitude, "Longitude": longitude, "Magnitude": mag})
+    return out
+    
+def vocano():
+    url = "https://ngdc.noaa.gov/hazel//hazard-service/api/v1/volcanolocs"
+    r = requests.get(url)
+    if (r.status_code == 200):
+        data = r.json()
+    return([(item["latitude"], item["longitude"]) for item in data["items"]])
 
 if __name__ == "main":
     print(earthquake(43.6532, -79.3832, datetime.now()))

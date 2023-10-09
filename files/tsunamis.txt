@@ -1,0 +1,1 @@
+[{"Latitude": -17.6, "Longitude": 167.856, "Magnitude": -4.64}, {"Latitude": -3.26, "Longitude": 142.94, "Magnitude": 0.58}, {"Latitude": -1.757, "Longitude": 134.297, "Magnitude": 2.32}, {"Latitude": 36.964, "Longitude": 3.634, "Magnitude": 1}, {"Latitude": -31.573, "Longitude": -71.674, "Magnitude": 8.4}]
